@@ -11,6 +11,7 @@ while(1) {
     $pheanstalk->delete($job);
     $trade = new Trade($json);
     $trade->save();
+    $trade->update_vwap();
   }
   catch (Exception $e) {
     error_log('Error: '.$e->getMessage())."\n";

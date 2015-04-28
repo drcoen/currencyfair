@@ -41,13 +41,45 @@ class Trade {
     }
 
     $db = Database::getInstance();
-    if ($db->query($db->buildInsert('trades', $this_array, array('created' => 'NOW()')))) {
+    $created = date('Y-m-d H:i:s');
+    $this_array['created'] = $created;
+    if ($db->query($db->buildInsert('trades', $this_array))) {
       $this->id = $db->lastInsertId();
-      derror('id: '.$this->id);
+      $this->created = $created;
     }
     else {
       throw new Exception('Unable to save to database');
     }
+  }
+
+  public function update_vwap() {
+    if (empty($this->id)) {
+      throw new Exception('Can\'t save VWAP for unsaved trade');
+    }
+
+    $db = Database::getInstance();
+    $table = 'vwap';
+    $date = date('Y-m-d', strtotime($this->created));
+
+    $fields = array(
+      'date' => $date,
+      'currency_from' => $this->currencyFrom,
+      'currency_to' => $this->currencyTo,
+      'vwap' => $this->rate,
+      'volume' => $this->amountSell
+    );
+    $sql = $db->buildInsert($table, $fields);
+
+    $sql .= ' ON DUPLICATE KEY ';
+
+    $db_fields = array(
+      'vwap' => '((vwap * volume) + ('.($this->amountSell * $this->rate).')) / (volume + '.$this->amountSell.')',
+      'volume' => 'volume + '.$this->amountSell
+    );
+    $where = ''; // don't need a WHERE clause for ON DUPLICATE KEY
+    $sql .= $db->buildUpdate($table, array(), $db_fields, $where);
+    $sql = str_replace(' UPDATE '.$table.' SET ', ' UPDATE ', $sql);
+    $db->query($sql);
   }
 
   /**
