@@ -1,7 +1,13 @@
 <?php
 
+/**
+ * Class representing an individual trade, coming from the user
+ *
+ */
+
 class Trade {
 
+  // array to convert from JSON input to DB equivalent fields
   private static $fields = array(
     'userId' => 'user_id',
     'currencyFrom' => 'currency_from',
@@ -13,6 +19,11 @@ class Trade {
     'originatingCountry' => 'originating_country'
   );
 
+  /**
+   * Constructor for a new trade
+   *
+   * @param   StdClass  $json  Object containg each of the expected JSON fields
+   */
   public function __construct($json) {
     if ($this->_json_valid($json)) {
       foreach ($json as $key => $value) {
@@ -27,11 +38,20 @@ class Trade {
     }
   }
 
+  /**
+   * Add the current object to the processing queue
+   */
   public function queue() {
     $pheanstalk = pheanstalk();
     $pheanstalk->useTube(TRADE_QUEUE)->put(json_encode($this));
   }
 
+  /**
+   * Save the current object to the database.
+   * Adds 'id' and 'created' to the object
+   *
+   * @throws  Exception    If you can't save to the database
+   */
   public function save() {
 
     // need to map the JSON names to their DB equivalents
@@ -52,39 +72,16 @@ class Trade {
     }
   }
 
-  public function update_vwap() {
-    if (empty($this->id)) {
-      throw new Exception('Can\'t save VWAP for unsaved trade');
-    }
-
-    $db = Database::getInstance();
-    $table = 'vwap';
-    $date = date('Y-m-d', strtotime($this->created));
-
-    $fields = array(
-      'date' => $date,
-      'currency_from' => $this->currencyFrom,
-      'currency_to' => $this->currencyTo,
-      'vwap' => $this->rate,
-      'volume' => $this->amountSell
-    );
-    $sql = $db->buildInsert($table, $fields);
-
-    $sql .= ' ON DUPLICATE KEY ';
-
-    $db_fields = array(
-      'vwap' => '((vwap * volume) + ('.($this->amountSell * $this->rate).')) / (volume + '.$this->amountSell.')',
-      'volume' => 'volume + '.$this->amountSell
-    );
-    $where = ''; // don't need a WHERE clause for ON DUPLICATE KEY
-    $sql .= $db->buildUpdate($table, array(), $db_fields, $where);
-    $sql = str_replace(' UPDATE '.$table.' SET ', ' UPDATE ', $sql);
-    $db->query($sql);
-  }
-
   /**
    * Validate the constructor parameters.
    * The data here can either be in userId (JSON) or user_id (DB) format, need to figure it out
+   *
+   * @param   StdClass   $json  Object containg each of the expected JSON fields
+   *
+   * @return  Bool              Returns 'true' if we're successful
+   *
+   * @throws  Exception         If any of the fields fail to validate
+   *
    */
   private function _json_valid($json) {
 
