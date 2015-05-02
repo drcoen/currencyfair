@@ -7,6 +7,8 @@
  */
 class VWAP {
 
+  const CACHE_TIME = 20; // cache for 20 seconds
+
   /**
    * Update the current day's VWAP for a currency pair with a given trade
    *
@@ -53,10 +55,25 @@ class VWAP {
 
   }
 
-  public static function get_todays_vwaps() {
+  /**
+   * Get VWAPs for each of today's unique currency pairs/trades and cache for a fixed amount of time
+   *
+   * @return  Array    2-D array of keyed array, each containing currency_from, currency_to and vwap
+   *
+   */
+  public static function todays_vwaps() {
     $db = Database::getInstance();
-    $db->query('SELECT currency_from, currency_to, vwap FROM vwap WHERE TO_DAYS(date) = TO_DAYS(NOW())');
-    return $db->fetchAll();
+    $key = 'vwap-'.date('Y-m-d');
+    $cache = new Cache();
+    if (!$vwaps = $cache->get($key)) {
+      $db->query('SELECT currency_from, currency_to, vwap FROM vwap WHERE TO_DAYS(date) = TO_DAYS(NOW())');
+      while ($vwap = $db->fetch()) {
+        $vwap['id'] = md5($vwap['currency_from'].'-'.$vwap['currency_to']); // give each one a unique id
+        $vwaps[] = $vwap;
+      }
+      $cache->set($key, $vwaps, self::CACHE_TIME);
+    }
+    return $vwaps;
   }
 }
 ?>

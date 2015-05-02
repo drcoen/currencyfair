@@ -19,6 +19,8 @@ class Trade {
     'originatingCountry' => 'originating_country'
   );
 
+  const CACHE_TIME = 20; // 20 seconds
+
   /**
    * Constructor for a new trade
    *
@@ -40,10 +42,12 @@ class Trade {
 
   /**
    * Add the current object to the processing queue
+   *
+   * @return  Integer    ID in queue (or null on failure)
    */
   public function queue() {
     $pheanstalk = pheanstalk();
-    $pheanstalk->useTube(TRADE_QUEUE)->put(json_encode($this));
+    return $pheanstalk->useTube(TRADE_QUEUE)->put(json_encode($this));
   }
 
   /**
@@ -87,12 +91,12 @@ class Trade {
 
     foreach (array_keys(self::$fields) as $field) {
 
-      $value = $json->$field;
-
       // ensure not empty
-      if (empty($value)) {
+      if (empty($json->$field)) {
         throw new Exception('Missing value for '.$field);
       }
+
+      $value = $json->$field;
 
       // ensure valid format
       $exception = null;
@@ -106,20 +110,20 @@ class Trade {
 
         case 'currencyFrom':
         case 'currencyTo':
-          if (!preg_match('/^[A-Z]{3}$/', $value)) {
+          if (!preg_match('/^[A-Z]{3}$/', (string)$value)) {
             $exception = $field;
           }
           break;
 
-        case 'amountFrom':
-        case 'amountTo':
-          if (!preg_match('/^[0-9]{1,6}\.[0-9]{2}$/', $value)) {
+        case 'amountBuy':
+        case 'amountSell':
+          if (!preg_match('/^[0-9]{1,6}(\.[0-9]{1,2})?$/', (string)$value)) {
             $exception = $field;
           }
           break;
 
         case 'rate':
-          if (!preg_match('/^[0-9]{1,6}\.[0-9]{1,4}$/', $value)) {
+          if (!preg_match('/^[0-9]{1,6}(\.[0-9]{1,4})?$/', (string)$value)) {
             $exception = 'rate';
           }
           break;
@@ -147,6 +151,24 @@ class Trade {
     }
 
     return true;
+  }
+
+  /**
+   * Function to get the 10 most recent trades from today
+   *
+   * @return  Array    2-D array of keyed array, each containing all the fields from the table
+   *
+   */
+  public static function most_recent() {
+    $key = 'tr-most-recent';
+    $cache = new Cache();
+    $db = Database::getInstance();
+    if (!$trades = $cache->get($key)) {
+      $db->query('SELECT * FROM trades WHERE TO_DAYS(created) = TO_DAYS(NOW()) ORDER BY id DESC LIMIT 10');
+      $trades = array_reverse($db->fetchAll());
+      $cache->set($key, $trades, self::CACHE_TIME);
+    }
+    return $trades;
   }
 
 }
