@@ -4,15 +4,9 @@ class MainController extends Controller {
 
   public function index() {
     $title = 'Index';
+
     include view('header');
-    $trade = new Trade(json_decode('{"userId": "134256", "currencyFrom": "EUR", "currencyTo": "GBP", "amountSell": 1000, "amountBuy": 747.10, "rate": 0.7471, "timePlaced" : "24-JAN-15 10:27:44", "originatingCountry" : "FR"}'));
-    pre_print_r($trade);
-?>
-      <div class="starter-template">
-        <h1>Bootstrap starter template</h1>
-        <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>
-      </div>
-<?php
+    include view('index');
     include view('footer');
   }
 
@@ -48,7 +42,12 @@ class MainController extends Controller {
 
   public function vwap() {
     header('Content-Type: application/json');
-    echo json_encode(VWAP::get_todays_vwaps());
+    echo json_encode(VWAP::todays_vwaps());
+  }
+
+  public function trades() {
+    header('Content-Type: application/json');
+    echo json_encode(Trade::most_recent());
   }
 
 }
