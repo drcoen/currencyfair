@@ -1,11 +1,5 @@
 
-<script type="text/template" id="vwap_template">
-  <tr id="vwap-<%= id %>">
-    <td><%= currency_from %></td>
-    <td><%= currency_to %></td>
-    <td><%= vwap %></td>
-  </tr>
-</script>
+
 <script type="text/javascript" data-main="/js/index.js?<?php echo time(); ?>" src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.1.17/require.min.js"></script>
 <script type="text/javascript" src="/js/requirejs.config.js"></script>
 
