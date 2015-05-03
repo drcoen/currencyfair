@@ -23,7 +23,7 @@ The database table's CREATE statements can be viewed in config/db.sql .
 
 ##Process
 ###POSTing a trade
-A trade comes in as a raw JSON POST and gets validated to ensure it meets expected formats for each field, see db.sql for a better idea of what the processor will accept. I didn't go over the top on error messages here, but you can get the idea. Once validated, the trade is pushed on to a Beanstalkd message queue, where it will be processed in due course. The user gets a reponse containing either an error message or an 'ok' indicator.
+A trade comes in as a raw JSON POST and gets validated to ensure it meets expected formats for each field, see db.sql for a better idea of what the processor will accept. I didn't go over the top on error messages here, but you can get the idea. Trades are rate-limited to 60 requests in 60 seconds for a given IP address. Once validated, the trade is pushed on to a Beanstalkd message queue, where it will be processed in due course. The user gets a reponse containing either an error message or an 'ok' indicator.
 
 Separately, there's a queue processor (scripts/trade-queue-processor.php) running all the time that looks for new jobs in the queue and saves the trade to the database. It also updates the current day's VWAP for the current trade's currency-pair.
 
