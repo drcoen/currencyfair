@@ -42,6 +42,6 @@
     </thead>
     <tbody>
       <!-- data loaded here -->
-    </tbodu>
+    </tbody>
   </table>
 </div>
