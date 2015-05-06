@@ -50,7 +50,7 @@ $currencies = array(
 $countries = array('IE', 'FR', 'NL', 'DE', 'GB', 'US', 'ES', 'PT', 'AU', 'IT', 'GR', 'BE', 'SE', 'AG', 'MX', 'CA', 'JP', 'IN', 'CN', 'HK');
 
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'http://cf.menucosm.local/trade');
+curl_setopt($ch, CURLOPT_URL, 'http://cf.menucosm'.SERVER_BASE.'/trade');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
@@ -59,8 +59,7 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
 while (1) {
 
   if (date('H') == 18) {
-    // past 6pm => sleep til 8.30am
-    sleep(60 * 60 * 14 + 1800);
+    exit;
   }
 
   $i = rand(0, 11);
