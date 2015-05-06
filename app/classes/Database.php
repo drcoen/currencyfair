@@ -205,5 +205,9 @@ class Database
     $this->per_page = $per_page;
   }
 
+  public function ping() {
+    self::$mysqli->ping();
+  }
+
 }
 ?>

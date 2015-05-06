@@ -15,6 +15,7 @@ while (1) {
     // remove from queue
     $pheanstalk->delete($job);
 
+    $db->ping(); // ensure connection is still alive
     $db->begin();
 
     // create new trade
